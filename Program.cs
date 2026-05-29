@@ -3,43 +3,34 @@ namespace Assignment_5_CLI_tools;
 
 class Program
 {
-    static void Main()
+
+    // scripts:
+    // dotnet run list/ls
+    // dotnet run print-file/pf
+
+    static void Main(string[] args)
     {
-        bool isRunning = true;
-        while (isRunning)
+        if (args == null)
         {
-            listener();
+            AnsiConsole.MarkupLine($"[red]Input == null. Try again[/]");
+            return;
         }
 
-        static void listener()
+        string command = args[0];
+        string option = "";
+        if (args.Length > 1) { option = args[1]; }
+
+        switch (command.ToLower())
         {
-            AnsiConsole.MarkupLine($"[blue]Command options are:[/]");
-            AnsiConsole.MarkupLine($"[green]->[/] List (path optional).");
-            string? input = Console.ReadLine();
-
-            if (input == null)
-            {
-                AnsiConsole.MarkupLine($"[red]Input == null. Try again[/]");
-                return;
-            }
-
-            string[] inputSplit = input.Split(" ");
-            string command = inputSplit[0];
-            string option = "";
-            if (inputSplit.Length > 1) { option = inputSplit[1]; }
-
-            switch (command.ToLower())
-            {
-                case "list" or "ls":
-                    list(option);
-                    break;
-                case "print-file" or "pf":
-                    printFile(option);
-                    break;
-                default:
-                    AnsiConsole.MarkupLine($"[red]X Input did not match any commands. Try again[/]\n");
-                    break;
-            }
+            case "list" or "ls":
+                list(option);
+                break;
+            case "print-file" or "pf":
+                printFile(option);
+                break;
+            default:
+                AnsiConsole.MarkupLine($"[red]X Input did not match any commands. Try again[/]\n");
+                break;
         }
         ;
 
@@ -87,7 +78,35 @@ class Program
 
         static void printFile(string path)
         {
-            path = pathHandler(path);
+            if (path == "")
+            {
+                AnsiConsole.MarkupLine($"[red]X No path provided[/]");
+                return;
+            }
+
+            path = Path.GetFullPath(path);
+            try
+            {
+                using StreamReader reader = new(path);
+
+                AnsiConsole.MarkupLine($"[blue]File content of {path}:[/]");
+
+                string? line;
+                int i = 0;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    Console.WriteLine(line);
+                    i++;
+                }
+                // Notifies about empty or unreadable file
+                if (i <= 1)
+                    AnsiConsole.MarkupLine($"[yellow]X[/] Empty or unreadable file");
+            }
+            catch
+            {
+                AnsiConsole.MarkupLine($"[red]X Could not find path:[/] {path}");
+            }
+
         }
     }
 }
