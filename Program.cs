@@ -5,8 +5,9 @@ class Program
 {
 
     // scripts:
-    // dotnet run list/ls
-    // dotnet run print-file/pf
+    // dotnet run list/ls optional: (-p "path/to/directory)
+    // dotnet run print-file/pf required: (-p "path/to/file)
+    // dotnet run print-file-start/pfs required:(-p "path/to/file) (-l amount of lines: e.g. 9)
 
     static void Main(string[] args)
     {
@@ -17,16 +18,36 @@ class Program
         }
 
         string command = args[0];
-        string option = "";
-        if (args.Length > 1) { option = args[1]; }
+        Dictionary<string, string> options = [];
+        string temp = "";
+        for (int i = 1; i < args.Length; i++)
+        {
+            if (args[i].StartsWith("-"))
+            {
+                temp = args[i]; // temporarily stores the -flag
+                continue;
+            }
+            if (temp.StartsWith("-")) // if flag exists, add key:value (flag:input) to options Dictionary. 
+            {
+                options.Add(temp, args[i]);
+                temp = ""; // Reset temp
+            }
+        }
 
         switch (command.ToLower())
         {
             case "list" or "ls":
-                list(option);
+                try { list(options["-path"]); }
+                catch { }
                 break;
             case "print-file" or "pf":
-                printFile(option);
+                printFile(options["-path"]);
+                break;
+            case "print-file-start" or "pfs":
+                printFileStart(options["-path"], options["-l"]);
+                break;
+            case "print-file-end" or "pfe":
+                printFileEnd(options["-path"], options["-l"]);
                 break;
             default:
                 AnsiConsole.MarkupLine($"[red]X Input did not match any commands. Try again[/]\n");
@@ -108,5 +129,89 @@ class Program
             }
 
         }
+
+        static void printFileStart(string path, string sLines)
+        {
+            // Turn string into int
+            if (!int.TryParse(sLines, out int nLines))
+            {
+                AnsiConsole.MarkupLine($"[red]X int.TryParse failed. Make sure -l value is a number");
+                return;
+            }
+
+            // Checks that path exist
+            if (path == "")
+            {
+                AnsiConsole.MarkupLine($"[red]X No path provided[/]");
+                return;
+            }
+
+            path = Path.GetFullPath(path); //From my understanding this turns relative paths into absolute paths. I found it when googling how paths are usually handled
+
+            try
+            {
+                using StreamReader reader = new(path);
+
+                AnsiConsole.MarkupLine($"[blue]File content of {path}:[/]");
+
+                string? line;
+                int i = 0;
+                while ((line = reader.ReadLine()) != null && i < nLines)
+                {
+                    Console.WriteLine(line);
+                    i++;
+                }
+                // Notifies about empty or unreadable file
+                if (i <= 1)
+                    AnsiConsole.MarkupLine($"[yellow]X[/] Empty or unreadable file");
+            }
+            catch
+            {
+                AnsiConsole.MarkupLine($"[red]X Could not find path:[/] {path}");
+            }
+        }
+        ;
+
+        static void printFileEnd(string path, string sLines)
+        {
+            // Turn string into int
+            if (!int.TryParse(sLines, out int nLines))
+            {
+                AnsiConsole.MarkupLine($"[red]X int.TryParse failed. Make sure -l value is a number");
+                return;
+            }
+
+            // Checks that path exist
+            if (path == "")
+            {
+                AnsiConsole.MarkupLine($"[red]X No path provided[/]");
+                return;
+            }
+
+            path = Path.GetFullPath(path); //From my understanding this turns relative paths into absolute paths. I found it when googling how paths are usually handled
+
+            try
+            {
+                using StreamReader reader = new(path);
+
+                AnsiConsole.MarkupLine($"[blue]File content of {path}:[/]");
+
+                string? line;
+                int i = reader.length - nLines;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    Console.WriteLine(line);
+                    i++;
+                }
+                // Notifies about empty or unreadable file
+                if (i <= 1)
+                    AnsiConsole.MarkupLine($"[yellow]X[/] Empty or unreadable file");
+            }
+            catch
+            {
+                AnsiConsole.MarkupLine($"[red]X Could not find path:[/] {path}");
+            }
+        }
+        ;
     }
 }
