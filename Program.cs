@@ -8,6 +8,10 @@ class Program
     // dotnet run list/ls optional: (-p "path/to/directory)
     // dotnet run print-file/pf required: (-p "path/to/file)
     // dotnet run print-file-start/pfs required:(-p "path/to/file) (-l amount of lines: e.g. 9)
+    // dotnet run print-file-end/pfe required:(-p "path/to/file) (-l amount of lines: e.g. 9)
+    // dotnet run create/c optional: (-p "path/to/file) required: (-n name. If you add a file extension like .txt it will be a file. If you don't it will make a new folder)
+    // dotnet run currentDirectory/cdir
+
 
     static void Main(string[] args)
     {
@@ -17,6 +21,7 @@ class Program
             return;
         }
 
+        // Handles the inputs, including command and various options.
         string command = args[0];
         Dictionary<string, string> options = [];
         string temp = "";
@@ -33,21 +38,31 @@ class Program
                 temp = ""; // Reset temp
             }
         }
-
+        // Activates different functions based on input command
         switch (command.ToLower())
         {
             case "list" or "ls":
                 try { list(options["-path"]); }
-                catch { }
+                catch { list(null); }
                 break;
             case "print-file" or "pf":
-                printFile(options["-path"]);
+                try { printFile(options["-path"]); }
+                catch { AnsiConsole.MarkupLine($"[red]X No -path provided. Try again[/]\n"); }
                 break;
             case "print-file-start" or "pfs":
-                printFileStart(options["-path"], options["-l"]);
+                try { printFileStart(options["-path"], options["-l"]); }
+                catch { AnsiConsole.MarkupLine($"[red]X No -path/-l provided. Try again[/]\n"); }
                 break;
             case "print-file-end" or "pfe":
-                printFileEnd(options["-path"], options["-l"]);
+                try { printFileEnd(options["-path"], options["-l"]); }
+                catch { AnsiConsole.MarkupLine($"[red]X No -path/-l provided. Try again[/]\n"); }
+                break;
+            case "create" or "c":
+                try { create(options["-path"], options["-n"]); }
+                catch { create(null, options["-n"]); }
+                break;
+            case "current-directory" or "cdir":
+                AnsiConsole.MarkupLine($"[blue]Current directory: {Directory.GetCurrentDirectory()}[/]");
                 break;
             default:
                 AnsiConsole.MarkupLine($"[red]X Input did not match any commands. Try again[/]\n");
@@ -55,10 +70,10 @@ class Program
         }
         ;
 
-        static string pathHandler(string path)
+        static string pathHandler(string? path)
         {
             // Defaults to current directory if no path is specified
-            if (path == "")
+            if (path == null)
                 path = Directory.GetCurrentDirectory();
             else
             {
@@ -68,7 +83,7 @@ class Program
             return path;
         }
 
-        static void list(string path)
+        static void list(string? path)
         {
             path = pathHandler(path);
 
@@ -96,15 +111,8 @@ class Program
             AnsiConsole.WriteLine("");
         }
         ;
-
         static void printFile(string path)
         {
-            if (path == "")
-            {
-                AnsiConsole.MarkupLine($"[red]X No path provided[/]");
-                return;
-            }
-
             path = Path.GetFullPath(path);
             try
             {
@@ -120,7 +128,7 @@ class Program
                     i++;
                 }
                 // Notifies about empty or unreadable file
-                if (i <= 1)
+                if (i == 0)
                     AnsiConsole.MarkupLine($"[yellow]X[/] Empty or unreadable file");
             }
             catch
@@ -139,30 +147,20 @@ class Program
                 return;
             }
 
-            // Checks that path exist
-            if (path == "")
-            {
-                AnsiConsole.MarkupLine($"[red]X No path provided[/]");
-                return;
-            }
-
             path = Path.GetFullPath(path); //From my understanding this turns relative paths into absolute paths. I found it when googling how paths are usually handled
 
             try
             {
-                using StreamReader reader = new(path);
+                AnsiConsole.MarkupLine($"[blue]First {sLines} lines of {path}:[/]");
 
-                AnsiConsole.MarkupLine($"[blue]File content of {path}:[/]");
+                List<string> startLines = [.. File.ReadLines(path).Take(nLines)];
 
-                string? line;
-                int i = 0;
-                while ((line = reader.ReadLine()) != null && i < nLines)
+                foreach (string line in startLines)
                 {
                     Console.WriteLine(line);
-                    i++;
                 }
                 // Notifies about empty or unreadable file
-                if (i <= 1)
+                if (startLines.Count <= 0)
                     AnsiConsole.MarkupLine($"[yellow]X[/] Empty or unreadable file");
             }
             catch
@@ -171,7 +169,6 @@ class Program
             }
         }
         ;
-
         static void printFileEnd(string path, string sLines)
         {
             // Turn string into int
@@ -181,13 +178,6 @@ class Program
                 return;
             }
 
-            // Checks that path exist
-            if (path == "")
-            {
-                AnsiConsole.MarkupLine($"[red]X No path provided[/]");
-                return;
-            }
-
             path = Path.GetFullPath(path); //From my understanding this turns relative paths into absolute paths. I found it when googling how paths are usually handled
 
             try
@@ -196,20 +186,43 @@ class Program
 
                 AnsiConsole.MarkupLine($"[blue]File content of {path}:[/]");
 
-                string? line;
-                int i = reader.length - nLines;
-                while ((line = reader.ReadLine()) != null)
+                List<string> endLines = [.. File.ReadLines(path).TakeLast(nLines)];
+                foreach (string line in endLines)
                 {
                     Console.WriteLine(line);
-                    i++;
                 }
                 // Notifies about empty or unreadable file
-                if (i <= 1)
+                if (endLines.Count <= 1)
                     AnsiConsole.MarkupLine($"[yellow]X[/] Empty or unreadable file");
             }
             catch
             {
                 AnsiConsole.MarkupLine($"[red]X Could not find path:[/] {path}");
+            }
+        }
+        ;
+        static void create(string? path, string name)
+        {
+            path = pathHandler(path);
+            string completePath = Path.Join(path, name);
+            try
+            {
+                if (Path.HasExtension(name))
+                {
+                    File.Create(completePath);
+                    AnsiConsole.MarkupLine($"[green]File '{name}' successfully created in:\n{completePath}[/]");
+
+                }
+                else if (!Path.HasExtension(name))
+                {
+                    Directory.CreateDirectory(completePath);
+                    AnsiConsole.MarkupLine($"[green]Folder '{name}' successfully created in:\n{completePath}[/]");
+
+                }
+            }
+            catch
+            {
+                AnsiConsole.MarkupLine($"[red]X Could not find path[/]");
             }
         }
         ;
