@@ -10,7 +10,7 @@ class Program
     // dotnet run print-file-start/pfs required:(-p "path/to/file) (-l amount of lines: e.g. 9)
     // dotnet run print-file-end/pfe required:(-p "path/to/file) (-l amount of lines: e.g. 9)
     // dotnet run create/c optional: (-p "path/to/file) required: (-n name. If you add a file extension like .txt it will be a file. If you don't it will make a new folder)
-    // dotnet run currentDirectory/cdir
+    // dotnet run current-directory/cdir
 
 
     static void Main(string[] args)
