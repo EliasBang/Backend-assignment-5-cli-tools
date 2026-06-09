@@ -3,16 +3,6 @@ namespace Assignment_5_CLI_tools;
 
 class Program
 {
-
-    // scripts:
-    // dotnet run list/ls optional: (-p "path/to/directory)
-    // dotnet run print-file/pf required: (-p "path/to/file)
-    // dotnet run print-file-start/pfs required:(-p "path/to/file) (-l amount of lines: e.g. 9)
-    // dotnet run print-file-end/pfe required:(-p "path/to/file) (-l amount of lines: e.g. 9)
-    // dotnet run create/c optional: (-p "path/to/file) required: (-n name. If you add a file extension like .txt it will be a file. If you don't it will make a new folder)
-    // dotnet run current-directory/cdir
-
-
     static void Main(string[] args)
     {
         if (args == null)
@@ -22,6 +12,7 @@ class Program
         }
 
         // Handles the inputs, including command and various options.
+        // This is done by storing -flags and values as key:value pairs in a dictionary.
         string command = args[0];
         Dictionary<string, string> options = [];
         string temp = "";
